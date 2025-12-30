@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>ShopZone | Secure Cloud Store</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Poppins}
+body{background:#020617;color:#fff}
+
+/* COMMON */
+button{cursor:pointer}
+.hidden{display:none}
+
+/* HEADER */
+header{
+  background:#020617;
+  padding:15px 30px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.logo{color:#facc15;font-size:22px;font-weight:700}
+header button{
+  padding:8px 18px;
+  border:none;
+  background:#6366f1;
+  color:white;
+  border-radius:20px;
+}
+
+/* LOGIN */
+.login-box{
+  max-width:400px;
+  margin:100px auto;
+  background:#0f172a;
+  padding:30px;
+  border-radius:15px;
+}
+.login-box h2{text-align:center;margin-bottom:20px}
+.login-box input{
+  width:100%;
+  padding:10px;
+  margin:10px 0;
+  border:none;
+  border-radius:8px;
+}
+.login-box button{
+  width:100%;
+  padding:10px;
+  background:#facc15;
+  border:none;
+  font-weight:bold;
+}
+
+/* HERO */
+.hero{text-align:center;padding:80px 20px}
+.hero h1{font-size:3rem}
+
+/* CATEGORY */
+.category{margin-bottom:60px}
+.category h2{
+  margin:20px 40px;
+  font-size:26px;
+  color:#facc15;
+}
+.category-products{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+  gap:25px;
+  padding:0 40px;
+}
+
+/* CARD */
+.card{
+  background:#0f172a;
+  border-radius:15px;
+  overflow:hidden;
+}
+.card img{width:100%;height:200px;object-fit:cover}
+.card-content{padding:15px;text-align:center}
+.card button{
+  width:100%;
+  padding:8px;
+  border:none;
+  background:#6366f1;
+  color:white;
+  border-radius:20px;
+}
+
+/* CART */
+.cart-panel{
+  position:fixed;
+  top:0;
+  right:-320px;
+  width:300px;
+  height:100%;
+  background:#020617;
+  padding:20px;
+  transition:0.3s;
+}
+.cart-panel.active{right:0}
+
+/* ADMIN */
+.admin{padding:40px}
+.admin input{padding:10px;margin:5px}
+.admin button{
+  padding:10px;
+  background:#facc15;
+  border:none;
+  font-weight:bold;
+}
+
+/* PAYMENT */
+.payment{text-align:center;padding:40px}
+.pay-btn{
+  margin:10px;
+  padding:15px 30px;
+  border:none;
+  font-size:16px;
+  border-radius:30px;
+}
+.razor{background:#2b7cff;color:white}
+.stripe{background:#635bff;color:white}
+
+footer{text-align:center;padding:20px;opacity:0.7}
+</style>
+</head>
+
+<body>
+
+<header>
+  <div class="logo">ShopZone</div>
+  <div>
+    <span id="userLabel"></span>
+    <button onclick="logout()">Logout</button>
+  </div>
+</header>
+
+<!-- LOGIN -->
+<div class="login-box" id="loginBox">
+  <h2>Login</h2>
+  <input id="email" placeholder="Email">
+  <input id="password" type="password" placeholder="Password">
+  <button onclick="login()">Login</button>
+  <p style="font-size:12px;margin-top:10px">
+    Admin → admin@shop.com / admin123<br>
+    User → user@shop.com / user123
+  </p>
+</div>
+
+<!-- USER AREA -->
+<div id="userArea" class="hidden">
+
+<section class="hero">
+  <h1>Secure Cloud Shopping</h1>
+  <p>Frontend Authentication & Payment Demo</p>
+  <button onclick="toggleCart()">🛒 Cart (<span id="cartCount">0</span>)</button>
+</section>
+
+<section id="shop"></section>
+
+<div class="payment">
+  <h2>Checkout</h2>
+  <button class="pay-btn razor" onclick="pay('Razorpay')">Pay with Razorpay</button>
+  <button class="pay-btn stripe" onclick="pay('Stripe')">Pay with Stripe</button>
+</div>
+
+</div>
+
+<!-- ADMIN -->
+<div id="adminArea" class="hidden admin">
+  <h2>Admin Dashboard</h2>
+  <input id="pname" placeholder="Product Name">
+  <input id="pprice" placeholder="Price">
+  <input id="pimg" placeholder="Image URL">
+  <button onclick="addProduct()">Add Product</button>
+</div>
+
+<!-- CART -->
+<div class="cart-panel" id="cartPanel">
+  <h3>Your Cart</h3>
+  <ul id="cartItems"></ul>
+</div>
+
+<footer>© 2025 ShopZone | Frontend Cloud Project</footer>
+
+<script>
+/* AUTH */
+const users={
+ "admin@shop.com":{pass:"admin123",role:"admin"},
+ "user@shop.com":{pass:"user123",role:"user"}
+};
+
+function login(){
+ if(users[email.value] && users[email.value].pass===password.value){
+  localStorage.user=email.value;
+  location.reload();
+ } else alert("Invalid Login");
+}
+function logout(){localStorage.clear();location.reload();}
+
+if(localStorage.user){
+ loginBox.style.display="none";
+ userLabel.innerText=localStorage.user;
+ if(users[localStorage.user].role==="admin") adminArea.classList.remove("hidden");
+ userArea.classList.remove("hidden");
+}
+
+/* PRODUCTS WITH CATEGORIES (UNCHANGED DATA) */
+let products=[
+ { name:"MacBook Pro", price:125000, img:"mac.jpg", category:"Electronics" },
+ { name:"Asus V16 Gaming Laptop", price:85000, img:"v16.webp", category:"Electronics" },
+ { name:"iPhone 15", price:78000, img:"i16.jpeg", category:"Electronics" },
+ { name:"Samsung M55 Android Smartphone", price:32000, img:"m55.jpeg", category:"Electronics" },
+ { name:"Samsung LED", price:65000, img:"Samsung LED.jpeg", category:"Electronics" },
+ { name:"Dell Optiplex PC", price:16000, img:"Dell Optiplex PC.jpeg", category:"Electronics" },
+
+ { name:"BOAT Wireless Headphones", price:4500, img:"boat.jpeg", category:"Accessories" },
+ { name:"JBL Bluetooth Speaker", price:3500, img:"jbl.jpeg", category:"Accessories" },
+ { name:"Titan Smart Watch", price:9000, img:"titan.jpeg", category:"Accessories" },
+ { name:"Calimate Power Bank", price:2000, img:"calimate.jpeg", category:"Accessories" },
+
+ { name:"Upioiwer Men’s Jacket", price:3200, img:"Upioiwer.jpeg", category:"Fashion" },
+ { name:"Sabyasachi Women’s Handbag", price:4800, img:"Sabyasachi.jpeg", category:"Fashion" },
+ { name:"Bruton Running Shoes", price:5500, img:"Bruton.jpeg", category:"Fashion" },
+ { name:"Kerala Sarees", price:14000, img:"Kerala Sarees.JPEG", category:"Fashion" },
+ { name:"Frame Travelbag", price:5000, img:"Frame Travelbag.jpeg", category:"Fashion" },
+
+ { name:"Back Mesh Office Chair", price:7500, img:"Back Mesh.jpeg", category:"Home & Lifestyle" },
+ { name:"Kent Coffee Maker", price:6200, img:"Kent.jpeg", category:"Home & Lifestyle" },
+ { name:"Fly Table Lamp", price:1800, img:"fly.jpeg", category:"Home & Lifestyle" },
+
+ { name:"Ausek Drone Camera", price:42000, img:"Ausek.JPEG", category:"Gadgets" },
+ { name:"Canon DSLR Camera", price:65000, img:"Canon.jpeg", category:"Gadgets" }
+];
+
+let cart=[];
+const shop=document.getElementById("shop");
+
+function render(){
+ shop.innerHTML="";
+ [...new Set(products.map(p=>p.category))].forEach(cat=>{
+  const section=document.createElement("div");
+  section.className="category";
+  section.innerHTML=`<h2>${cat}</h2><div class="category-products"></div>`;
+  const box=section.querySelector(".category-products");
+
+  products.filter(p=>p.category===cat).forEach(p=>{
+   box.innerHTML+=`
+    <div class="card">
+     <img src="${p.img}">
+     <div class="card-content">
+      <h3>${p.name}</h3>
+      <p>₹${p.price}</p>
+      <button onclick="addToCart('${p.name}',${p.price})">Add</button>
+     </div>
+    </div>`;
+  });
+  shop.appendChild(section);
+ });
+}
+render();
+
+/* ADMIN ADD */
+function addProduct(){
+ products.push({name:pname.value,price:pprice.value,img:pimg.value,category:"Others"});
+ render();
+}
+
+/* CART */
+function addToCart(n,p){
+ cart.push({n,p});
+ cartCount.innerText=cart.length;
+ cartItems.innerHTML+=`<li>${n} - ₹${p}</li>`;
+}
+function toggleCart(){cartPanel.classList.toggle("active")}
+
+/* PAYMENT */
+function pay(type){
+ if(cart.length==0) return alert("Cart empty");
+ alert(type+" Payment Successful (Demo)");
+ cart=[];cartItems.innerHTML="";cartCount.innerText=0;
+}
+</script>
+
+</body>
+</html>
